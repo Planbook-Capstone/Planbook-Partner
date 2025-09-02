@@ -21,7 +21,7 @@ grade_analyzer = GradeAnalyzer()
 
 
 
-@router.post("/upload-and-analyze", response_model=DataResponseDTO[AnalysisResponseData])
+@router.post("/upload-and-analyze", response_model=Dict[str, Any])
 async def upload_and_analyze_immediately(
     file: UploadFile = File(...),
     client_id: str = Depends(verify_api_token)
@@ -62,39 +62,27 @@ async def upload_and_analyze_immediately(
         # Phân tích ngay lập tức
         analysis_result = grade_analyzer.analyze_complete(f"analysis_{client_id}", students)
 
-        # Tạo response data theo format chuẩn
-        response_data = AnalysisResponseData(
-            file_id=analysis_result.file_id,
-            class_statistics=analysis_result.class_statistics,
-            student_summaries=analysis_result.student_summaries,
-            recommendations=analysis_result.recommendations
-        )
-
         logger.info(f"Analysis completed successfully for client: {client_id}, tool_log_id: {tool_log_id}")
 
-        # Trả về theo format DataResponseDTO
-        return DataResponseDTO[AnalysisResponseData](
-            success=True,
-            data=response_data,
-            message="Phân tích file Excel thành công",
-            tool_log_id=tool_log_id,
-            timestamp=datetime.utcnow().isoformat(),
-            client_id=client_id
-        )
+        # Chuyển đổi analysis_result thành dict để phù hợp với format response
+        analysis_data = analysis_result.dict()
+
+        # Trả về theo format chuẩn mà Java code expect
+        return {
+            "success": True,
+            "data": analysis_data,
+            "message": "Phân tích file Excel thành công"
+        }
 
     except Exception as e:
         logger.error(f"Analysis failed for client {client_id}, tool_log_id: {tool_log_id}: {str(e)}")
 
-        # Trả về error response theo format DataResponseDTO
-        return DataResponseDTO[AnalysisResponseData](
-            success=False,
-            data=None,
-            message=f"Lỗi khi phân tích file: {str(e)}",
-            tool_log_id=tool_log_id,
-            timestamp=datetime.utcnow().isoformat(),
-            client_id=client_id,
-            error=str(e)
-        )
+        # Trả về error response theo format chuẩn mà Java code expect
+        return {
+            "success": False,
+            "data": None,
+            "message": f"Lỗi khi phân tích file: {str(e)}"
+        }
 
 
 
