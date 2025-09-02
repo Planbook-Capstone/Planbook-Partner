@@ -97,10 +97,25 @@ GET /api/v1/recommendations/{file_id}
 
 ## Xếp loại học lực
 
-- **Giỏi**: ≥ 8.0 điểm
-- **Khá**: 6.5 - 7.9 điểm
-- **Trung bình**: 5.0 - 6.4 điểm
-- **Yếu**: < 5.0 điểm
+### Học sinh giỏi
+
+- Điểm trung bình chung (TBC) ≥ 8.0
+- Không môn nào dưới 6.5
+- Ít nhất một trong hai môn Toán hoặc Ngữ văn ≥ 8.0
+
+### Học sinh khá
+
+- Điểm trung bình chung ≥ 6.5
+- Không môn nào dưới 5.0
+
+### Học sinh trung bình
+
+- Điểm trung bình chung ≥ 5.0
+- Không môn nào dưới 3.5
+
+### Học sinh yếu
+
+- Các trường hợp còn lại
 
 ## Cấu trúc dự án
 
