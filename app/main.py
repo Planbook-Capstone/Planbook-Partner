@@ -5,6 +5,7 @@ import os
 import uvicorn
 
 from app.api.endpoints import router
+from app.api.auth_endpoints import router as auth_router
 
 # Tạo thư mục uploads nếu chưa tồn tại
 os.makedirs("uploads", exist_ok=True)
@@ -29,6 +30,7 @@ app.add_middleware(
 
 # Include router
 app.include_router(router, prefix="/api/v1", tags=["Grade Analysis"])
+app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
 
 
 @app.exception_handler(HTTPException)

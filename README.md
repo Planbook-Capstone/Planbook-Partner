@@ -1,6 +1,6 @@
 # 🎓 Grade Analysis API
 
-API phân tích kết quả học tập học sinh với FastAPI và pandas.
+API phân tích kết quả học tập học sinh với FastAPI và pandas, được bảo vệ bằng hệ thống xác thực JWT.
 
 ## ✨ Tính năng chính
 
@@ -11,6 +11,7 @@ API phân tích kết quả học tập học sinh với FastAPI và pandas.
 - 🎯 **Thống kê chi tiết**: Điểm cao/thấp nhất, ai đạt điểm đó
 - 💡 **Gợi ý thông minh**: Đề xuất cá nhân hóa và nhóm học tập
 - 🌐 **API RESTful**: Swagger UI đầy đủ
+- 🔐 **Authentication**: Hệ thống xác thực JWT với ClientID/ClientSecret
 
 ## Cài đặt
 
@@ -20,7 +21,26 @@ API phân tích kết quả học tập học sinh với FastAPI và pandas.
 pip install -r requirements.txt
 ```
 
-2. Chạy server:
+2. Cấu hình MongoDB (tùy chọn):
+
+```bash
+# Sử dụng Docker (khuyến nghị)
+docker-compose up -d mongodb
+
+# Hoặc cài đặt MongoDB local
+# Xem hướng dẫn tại: https://docs.mongodb.com/manual/installation/
+```
+
+3. Cấu hình environment variables:
+
+```bash
+# Copy file cấu hình mẫu
+cp .env.example .env
+
+# Chỉnh sửa .env theo môi trường của bạn
+```
+
+4. Chạy server:
 
 ```bash
 python -m app.main
@@ -32,7 +52,7 @@ Hoặc:
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-3. Truy cập API docs: http://localhost:8000/docs
+5. Truy cập API docs: http://localhost:8000/docs
 
 ## Cấu trúc file Excel
 
@@ -47,52 +67,173 @@ File Excel cần có các cột:
 
 ## API Endpoints
 
-### 1. Upload file Excel
+### 🔐 Authentication Endpoints (`/auth`)
 
-```
-POST /api/v1/upload-excel
-```
+#### 1. Đăng ký Client
 
-### 2. Phân tích toàn diện
-
-```
-GET /api/v1/analyze/{file_id}
+```http
+POST /auth/register-client
 ```
 
-### 3. Tóm tắt từng học sinh
+Đăng ký client mới và nhận ClientID/ClientSecret
 
-```
-GET /api/v1/student-summary/{file_id}
-```
+#### 2. Tạo Access Token
 
-### 4. Thống kê lớp học
-
-```
-GET /api/v1/class-statistics/{file_id}
+```http
+POST /auth/token
 ```
 
-### 5. Phân tích theo môn học
+Tạo JWT token từ ClientID/ClientSecret
 
-```
-GET /api/v1/subject-analysis/{file_id}
-```
+#### 3. Xác thực Token
 
-### 6. Danh sách học sinh yếu
-
-```
-GET /api/v1/weak-students/{file_id}?threshold=5.0
+```http
+POST /auth/verify-token
 ```
 
-### 7. Top học sinh giỏi
+Kiểm tra tính hợp lệ của token
+
+#### 4. Thông tin Client
+
+```http
+GET /auth/client-info
+Authorization: Bearer <token>
+```
+
+Lấy thông tin client từ token
+
+#### 5. Thu hồi Token
+
+```http
+POST /auth/revoke-token
+Authorization: Bearer <token>
+```
+
+Vô hiệu hóa token hiện tại
+
+### 📊 Grade Analysis Endpoints (`/api/v1`)
+
+#### 1. Upload và Phân tích (🔒 Protected)
+
+```http
+POST /api/v1/upload-and-analyze
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+```
+
+Upload file Excel và phân tích ngay lập tức
+
+## 🚀 Cách sử dụng nhanh
+
+### Bước 1: Đăng ký Client
+
+```bash
+curl -X POST "http://localhost:8000/auth/register-client" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "client_name": "My Grade Analyzer",
+    "description": "Application for analyzing student grades",
+    "contact_email": "admin@school.edu"
+  }'
+```
+
+### Bước 2: Lấy Access Token
+
+```bash
+curl -X POST "http://localhost:8000/auth/token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "client_id": "client_abc123...",
+    "client_secret": "secret_xyz789..."
+  }'
+```
+
+### Bước 3: Upload và Phân tích
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/upload-and-analyze" \
+  -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..." \
+  -F "file=@bang_diem_format_ngang.xlsx"
+```
+
+## 🧪 Testing
+
+Chạy test script tự động:
+
+```bash
+python test_auth_api.py
+```
+
+Hoặc test API cũ (không cần authentication):
+
+```bash
+python test_api.py
+```
+
+## 🔐 Authentication Details
+
+Xem chi tiết về hệ thống xác thực tại: [AUTH_README.md](AUTH_README.md)
+
+### Security Features:
+
+- ✅ JWT Tokens với expiration
+- ✅ Client Secret hashing
+- ✅ Token revocation
+- ✅ Automatic cleanup expired tokens
+- ✅ Database indexing for performance
+
+## 📁 Cấu trúc dự án
 
 ```
-GET /api/v1/top-students/{file_id}?limit=10
+├── app/
+│   ├── __init__.py
+│   ├── main.py                    # FastAPI app chính
+│   ├── core/
+│   │   ├── __init__.py
+│   │   └── config.py              # Cấu hình ứng dụng
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── schemas.py             # Pydantic models cho grade analysis
+│   │   └── auth_models.py         # Pydantic models cho authentication
+│   ├── services/
+│   │   ├── __init__.py
+│   │   ├── excel_processor.py     # Xử lý Excel
+│   │   ├── grade_analyzer.py      # Phân tích điểm
+│   │   └── auth_service.py        # Service xác thực
+│   ├── middleware/
+│   │   ├── __init__.py
+│   │   └── auth_middleware.py     # Middleware xác thực
+│   └── api/
+│       ├── __init__.py
+│       ├── endpoints.py           # API endpoints chính
+│       └── auth_endpoints.py      # Authentication endpoints
+├── uploads/                       # Thư mục lưu file upload (tạm thời)
+├── requirements.txt               # Dependencies
+├── docker-compose.yml             # MongoDB setup
+├── .env.example                   # Environment variables mẫu
+├── test_api.py                    # Test script cũ
+├── test_auth_api.py              # Test script authentication
+├── README.md                      # Documentation chính
+├── AUTH_README.md                 # Documentation authentication
+└── bang_diem_format_ngang.xlsx    # File test mẫu
 ```
 
-### 8. Gợi ý cải thiện
+## 🔧 Environment Variables
 
-```
-GET /api/v1/recommendations/{file_id}
+Tạo file `.env` từ `.env.example` và cấu hình:
+
+```bash
+# Database
+MONGODB_URL=mongodb://localhost:27017
+MONGODB_DATABASE=grade_analyzer_auth
+
+# JWT
+SECRET_KEY=your-super-secret-key-change-in-production
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+
+# App
+ENVIRONMENT=development
+DEBUG=true
 ```
 
 ## Xếp loại học lực
@@ -120,20 +261,26 @@ GET /api/v1/recommendations/{file_id}
 ## Cấu trúc dự án
 
 ```
+
 ├── app/
-│   ├── __init__.py
-│   ├── main.py              # FastAPI app chính
-│   ├── models/
-│   │   ├── __init__.py
-│   │   └── schemas.py       # Pydantic models
-│   ├── services/
-│   │   ├── __init__.py
-│   │   ├── excel_processor.py  # Xử lý Excel
-│   │   └── grade_analyzer.py   # Phân tích điểm
-│   └── api/
-│       ├── __init__.py
-│       └── endpoints.py     # API endpoints
-├── uploads/                 # Thư mục lưu file upload
+│ ├── **init**.py
+│ ├── main.py # FastAPI app chính
+│ ├── models/
+│ │ ├── **init**.py
+│ │ └── schemas.py # Pydantic models
+│ ├── services/
+│ │ ├── **init**.py
+│ │ ├── excel_processor.py # Xử lý Excel
+│ │ └── grade_analyzer.py # Phân tích điểm
+│ └── api/
+│ ├── **init**.py
+│ └── endpoints.py # API endpoints
+├── uploads/ # Thư mục lưu file upload
 ├── requirements.txt
 └── README.md
+
+```
+
+```
+
 ```

@@ -1,6 +1,9 @@
-from typing import Dict, List
+from typing import Dict, List, Optional, Any, Generic, TypeVar
 from pydantic import BaseModel, Field
 from enum import Enum
+from datetime import datetime
+
+T = TypeVar('T')
 
 
 class GradeLevel(str, Enum):
@@ -67,6 +70,28 @@ class AnalysisResult(BaseModel):
     class_statistics: ClassStatistics
     student_summaries: List[StudentSummary]
     recommendations: List[str] = Field(default_factory=list, description="Gợi ý cải thiện")
+
+
+class DataResponseDTO(BaseModel, Generic[T]):
+    """
+    Standard response format cho tất cả API endpoints
+    Tương tự như DataResponseDTO trong Java Spring Boot
+    """
+    success: bool = Field(..., description="Trạng thái thành công/thất bại")
+    data: Optional[T] = Field(None, description="Dữ liệu response")
+    message: str = Field(..., description="Thông báo kết quả")
+    tool_log_id: Optional[str] = Field(None, description="ID để tracking log")
+    timestamp: str = Field(default_factory=lambda: datetime.utcnow().isoformat(), description="Thời gian response")
+    client_id: Optional[str] = Field(None, description="ID client thực hiện request")
+    error: Optional[str] = Field(None, description="Chi tiết lỗi nếu có")
+
+
+class AnalysisResponseData(BaseModel):
+    """Data structure cho analysis response"""
+    file_id: str
+    class_statistics: ClassStatistics
+    student_summaries: List[StudentSummary]
+    recommendations: List[str]
 
 
 
