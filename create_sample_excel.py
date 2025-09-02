@@ -29,26 +29,5 @@ df = pd.DataFrame(data)
 # Lưu file Excel theo format ngang
 df.to_excel("bang_diem_format_ngang.xlsx", index=False, sheet_name="Bảng điểm")
 
-# Tạo format dọc cho API
-vertical_data = []
-subjects = ['Toán', 'Ngữ Văn', 'Tiếng Anh', 'Vật Lý', 'Hóa Học', 'Sinh Học',
-           'Lịch Sử', 'Địa Lý', 'GDCD', 'Công Nghệ', 'Tin Học', 'Thể Dục']
-
-for _, row in df.iterrows():
-    student_name = row['Tên học sinh']
-    for subject in subjects:
-        vertical_data.append({
-            'Tên học sinh': student_name,
-            'Lớp': '7A',
-            'Môn học': subject,
-            'Điểm': row[subject]
-        })
-
-df_vertical = pd.DataFrame(vertical_data)
-df_vertical.to_excel("bang_diem_format_doc.xlsx", index=False, sheet_name="Kết quả học tập")
-
-print("✅ Đã tạo file bang_diem_format_ngang.xlsx (định dạng ngang) thành công!")
-print("✅ Đã tạo file bang_diem_format_doc.xlsx (định dạng dọc cho API) thành công!")
-print(f"📊 File chứa {len(df)} học sinh")
-print(f"📚 Các môn học: {', '.join(subjects)}")
-print(f"📈 Tổng số bản ghi: {len(df_vertical)}")
+print("✅ Đã tạo file bang_diem_format_ngang.xlsx thành công!")
+print(f"📊 File chứa {len(df)} học sinh với 12 môn học")

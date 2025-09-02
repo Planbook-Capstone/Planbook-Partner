@@ -1,38 +1,11 @@
 import pandas as pd
-import os
-from typing import List, Dict, Tuple
+from typing import List
 from app.models.schemas import Student, Grade
-import uuid
 
 
 class ExcelProcessor:
-    def __init__(self, upload_dir: str = "uploads"):
-        self.upload_dir = upload_dir
-        self.processed_files: Dict[str, Dict] = {}
     
-    def save_uploaded_file(self, file_content: bytes, filename: str) -> str:
-        """Lưu file upload và trả về file_id"""
-        file_id = str(uuid.uuid4())
-        file_path = os.path.join(self.upload_dir, f"{file_id}_{filename}")
-        
-        with open(file_path, "wb") as f:
-            f.write(file_content)
-        
-        return file_id
-    
-    def read_excel_file(self, file_id: str, filename: str) -> pd.DataFrame:
-        """Đọc file Excel và trả về DataFrame"""
-        file_path = os.path.join(self.upload_dir, f"{file_id}_{filename}")
-        
-        try:
-            if filename.endswith('.csv'):
-                df = pd.read_csv(file_path, encoding='utf-8')
-            else:
-                df = pd.read_excel(file_path)
-            
-            return df
-        except Exception as e:
-            raise ValueError(f"Không thể đọc file: {str(e)}")
+
     
     def detect_format_and_convert(self, df: pd.DataFrame) -> pd.DataFrame:
         """Phát hiện định dạng Excel (ngang/dọc) và chuyển đổi về định dạng chuẩn"""
@@ -180,53 +153,7 @@ class ExcelProcessor:
 
         return list(students_dict.values())
     
-    def process_excel_file(self, file_content: bytes, filename: str) -> Tuple[str, List[Student], Dict]:
-        """Xử lý file Excel hoàn chỉnh"""
-        # Lưu file
-        file_id = self.save_uploaded_file(file_content, filename)
-        
-        try:
-            # Đọc file
-            df = self.read_excel_file(file_id, filename)
-            
-            # Validate và làm sạch
-            df_clean = self.validate_and_clean_data(df)
-            
-            # Chuyển đổi thành Student objects
-            students = self.convert_to_students(df_clean)
-            
-            # Thống kê cơ bản
-            stats = {
-                'total_students': len(students),
-                'total_subjects': len(df_clean['subject'].unique()),
-                'total_records': len(df_clean),
-                'subjects': df_clean['subject'].unique().tolist(),
-                'classes': df_clean['class_name'].unique().tolist()
-            }
-            
-            # Lưu thông tin đã xử lý
-            self.processed_files[file_id] = {
-                'filename': filename,
-                'students': students,
-                'stats': stats
-            }
-            
-            return file_id, students, stats
-            
-        except Exception as e:
-            # Xóa file nếu xử lý thất bại
-            file_path = os.path.join(self.upload_dir, f"{file_id}_{filename}")
-            if os.path.exists(file_path):
-                os.remove(file_path)
-            raise e
-    
-    def get_processed_data(self, file_id: str) -> Tuple[List[Student], Dict]:
-        """Lấy dữ liệu đã xử lý theo file_id"""
-        if file_id not in self.processed_files:
-            raise ValueError(f"File ID {file_id} không tồn tại hoặc chưa được xử lý")
 
-        data = self.processed_files[file_id]
-        return data['students'], data['stats']
 
     def process_excel_in_memory(self, file_content: bytes, filename: str) -> List[Student]:
         """Xử lý file Excel trong memory mà không lưu file"""
