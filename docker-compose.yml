@@ -1,6 +1,7 @@
-version: '3.8'
+version: "3.8"
 
 services:
+  # MongoDB Database
   mongodb:
     image: mongo:7.0
     container_name: grade_analyzer_mongo
@@ -13,9 +14,50 @@ services:
       MONGO_INITDB_DATABASE: grade_analyzer_auth
     volumes:
       - mongodb_data:/data/db
-      - ./mongo-init:/docker-entrypoint-initdb.d
     networks:
       - grade_analyzer_network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # FastAPI Application
+  api:
+    build: .
+    container_name: grade_analyzer_api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # Database Configuration
+      MONGODB_URL: mongodb://admin:password123@mongodb:27017/grade_analyzer_auth?authSource=admin
+      MONGODB_DATABASE: grade_analyzer_auth
+
+      # JWT Configuration
+      SECRET_KEY: your-super-secret-key-change-in-production-make-it-very-long-and-random-for-security
+      ACCESS_TOKEN_EXPIRE_MINUTES: 60
+
+      # Application Configuration
+      ENVIRONMENT: production
+      DEBUG: false
+
+      # Security
+      BCRYPT_ROUNDS: 12
+    volumes:
+      - ./uploads:/app/uploads
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - grade_analyzer_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   # Optional: MongoDB Express for database management
   mongo-express:
@@ -30,7 +72,8 @@ services:
       ME_CONFIG_MONGODB_URL: mongodb://admin:password123@mongodb:27017/
       ME_CONFIG_BASICAUTH: false
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
     networks:
       - grade_analyzer_network
 
