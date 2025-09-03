@@ -1,11 +1,12 @@
 import pandas as pd
 from typing import List
+import requests
+import io
 from app.models.schemas import Student, Grade
 
 
 class ExcelProcessor:
     
-
     
     def detect_format_and_convert(self, df: pd.DataFrame) -> pd.DataFrame:
         """Phát hiện định dạng Excel (ngang/dọc) và chuyển đổi về định dạng chuẩn"""
@@ -157,8 +158,6 @@ class ExcelProcessor:
 
     def process_excel_in_memory(self, file_content: bytes, filename: str) -> List[Student]:
         """Xử lý file Excel trong memory mà không lưu file"""
-        import io
-
         try:
             # Tạo BytesIO object từ file content
             file_buffer = io.BytesIO(file_content)
@@ -179,3 +178,38 @@ class ExcelProcessor:
 
         except Exception as e:
             raise ValueError(f"Không thể xử lý file: {str(e)}")
+
+    def process_excel_from_url(self, url: str) -> List[Student]:
+        """Download và xử lý file Excel từ URL (Supabase link)"""
+        try:
+            # Download file từ URL
+            response = requests.get(url, timeout=30)
+            response.raise_for_status()  # Raise exception nếu có lỗi HTTP
+
+            # Lấy filename từ URL hoặc Content-Disposition header
+            filename = self._extract_filename_from_url(url, response)
+
+            # Xử lý file content
+            return self.process_excel_in_memory(response.content, filename)
+
+        except requests.exceptions.RequestException as e:
+            raise ValueError(f"Không thể download file từ URL: {str(e)}")
+        except Exception as e:
+            raise ValueError(f"Lỗi khi xử lý file từ URL: {str(e)}")
+
+    def _extract_filename_from_url(self, url: str, response: requests.Response) -> str:
+        """Trích xuất filename từ URL hoặc response headers"""
+        # Thử lấy từ Content-Disposition header trước
+        content_disposition = response.headers.get('Content-Disposition', '')
+        if 'filename=' in content_disposition:
+            filename = content_disposition.split('filename=')[1].strip('"')
+            return filename
+
+        # Nếu không có, lấy từ URL
+        url_parts = url.split('/')
+        for part in reversed(url_parts):
+            if '.' in part and any(ext in part.lower() for ext in ['.xlsx', '.xls', '.csv']):
+                return part
+
+        # Default filename nếu không tìm được
+        return "downloaded_file.xlsx"

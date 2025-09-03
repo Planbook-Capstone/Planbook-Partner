@@ -94,4 +94,9 @@ class AnalysisResponseData(BaseModel):
     recommendations: List[str]
 
 
+class SupabaseLinkRequest(BaseModel):
+    """Request schema cho endpoint analyze từ Supabase link"""
+    link: str = Field(..., description="Supabase link đến file Excel")
+
+
 

@@ -123,6 +123,24 @@ Content-Type: multipart/form-data
 
 Upload file Excel và phân tích ngay lập tức
 
+#### 2. Phân tích từ Supabase Link (🔒 Protected)
+
+```http
+POST /api/v1/analyze-from-link
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+Download file Excel từ Supabase link và phân tích ngay lập tức
+
+**Request Body:**
+
+```json
+{
+  "link": "https://your-supabase-project.supabase.co/storage/v1/object/public/bucket/file.xlsx"
+}
+```
+
 ## 🚀 Cách sử dụng nhanh
 
 ### Bước 1: Đăng ký Client
@@ -150,25 +168,48 @@ curl -X POST "http://localhost:8000/auth/token" \
 
 ### Bước 3: Upload và Phân tích
 
+#### Option 1: Upload file trực tiếp
+
 ```bash
 curl -X POST "http://localhost:8000/api/v1/upload-and-analyze" \
   -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..." \
   -F "file=@bang_diem_format_ngang.xlsx"
 ```
 
+#### Option 2: Phân tích từ Supabase link
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/analyze-from-link" \
+  -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "link": "https://your-supabase-project.supabase.co/storage/v1/object/public/bucket/file.xlsx"
+  }'
+```
+
 ## 🧪 Testing
 
-Chạy test script tự động:
+### Test với Authentication:
 
 ```bash
 python test_auth_api.py
 ```
 
-Hoặc test API cũ (không cần authentication):
+### Test API cũ (không cần authentication):
 
 ```bash
 python test_api.py
 ```
+
+Chọn option 3 để test endpoint analyze-from-link
+
+### Test riêng endpoint Supabase link:
+
+```bash
+python test_supabase_link_api.py
+```
+
+**Lưu ý**: Cần thay thế `SAMPLE_SUPABASE_LINK` trong file test bằng link Supabase thực tế
 
 ## 🔐 Authentication Details
 
